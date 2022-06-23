@@ -22,6 +22,17 @@ val examplePost = Post(100,
     false
 )
 
+val exampleComment = Comment(
+    1,
+    2,
+    3,
+    "Example comment",
+    1,
+    1,
+    emptyArray(),
+    emptyArray()
+)
+
 fun main() {
 
     val emptyPost = Post()
@@ -32,4 +43,10 @@ fun main() {
     println(WallService.update(examplePost.copy(id = 1, text = "Correctly updated post")))
     for (post in WallService.getPosts())
         println(post)
+    WallService.createComment(0, exampleComment)
+    println(WallService.getComments().last())
+    WallService.createComment(2, exampleComment.copy(id = 5))
+    println(WallService.getComments().last())
+    //WallService.createComment(5, exampleComment.copy(id = 10))  // PostNotFoundException
+    println(WallService.getComments().last())
 }
