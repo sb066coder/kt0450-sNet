@@ -33,6 +33,8 @@ val exampleComment = Comment(
     emptyArray()
 )
 
+val exampleReport = ReportComment(1,1, Reason.DRUG_PROPAGANDA)
+
 fun main() {
 
     val emptyPost = Post()
@@ -49,4 +51,8 @@ fun main() {
     println(WallService.getComments().last())
     //WallService.createComment(5, exampleComment.copy(id = 10))  // PostNotFoundException
     println(WallService.getComments().last())
+    WallService.createReportComment(exampleReport)
+    println(WallService.getReports().last())
+    WallService.createReportComment(exampleReport.copy(commentId = 10, reason = Reason.ADULT_MATERIAL))
+    println(WallService.getReports().last())
 }
