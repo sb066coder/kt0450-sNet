@@ -48,7 +48,7 @@ class WallServiceTest {
         WallService.createComment(
             existingPostId, exampleComment.copy(text = "Test comment for report")
         )
-        var nonExistentCommentId = WallService.getComments().map { comment -> comment.id }.max() + 1
+        var nonExistentCommentId = WallService.getComments().maxOfOrNull { comment -> comment.id }?.plus(1) ?: 0
         WallService.createReportComment(exampleReport.copy(commentId = nonExistentCommentId))
     }
 }
