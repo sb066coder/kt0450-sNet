@@ -42,6 +42,7 @@ class NoteServiceTest {
     fun testGetById() {
         assertEquals(NoteService.get().first(), NoteService.getById(0))
         assertEquals(NoteService.get().last(), NoteService.getById(2))
+        assertNull(NoteService.getById(3))
     }
 
     @Test
