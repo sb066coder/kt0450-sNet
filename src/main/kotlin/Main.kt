@@ -53,6 +53,9 @@ fun main() {
     println(WallService.getComments().last())
     WallService.createReportComment(exampleReport)
     println(WallService.getReports().last())
-    WallService.createReportComment(exampleReport.copy(commentId = 10, reason = Reason.ADULT_MATERIAL))
-    println(WallService.getReports().last())
+//    WallService.createReportComment(exampleReport.copy(commentId = 10, reason = Reason.ADULT_MATERIAL))
+//    println(WallService.getReports().last())
+
+    NoteService.add("First note", "Show time")
+    println(NoteService.get()[0])
 }
