@@ -47,12 +47,22 @@ class ChatServiceTest {
         assertEquals("Простите", ChatService.testGetChats().last().messages.last().text)
     }
 
+    @Test(expected = MessageNotFoundException::class)
+    fun testEditMessageShouldThrow() {
+        ChatService.editMessage(masha, dasha, 5, "shouldn't find")
+    }
+
     @Test
     fun testDeleteMessage() {
         val prevMessage = ChatService.testGetChats()[1].messages.last()
         ChatService.createMessage(dasha, masha, "Message to delete")
         assertEquals(0, ChatService.deleteMessage(dasha, masha, 2))
         assertEquals(prevMessage, ChatService.testGetChats()[1].messages.last())
+    }
+
+    @Test(expected = MessageNotFoundException::class)
+    fun testDeleteMessageShouldThrow() {
+        ChatService.deleteMessage(dasha, masha, 5)
     }
 
     @Test
@@ -71,7 +81,7 @@ class ChatServiceTest {
     }
 
     @Test
-    fun teatGetUnreadChats() {
+    fun testGetUnreadChats() {
         assertEquals(listOf(
             ChatService.testGetChats()[0]
         ), ChatService.getUnreadChats(sasha))
