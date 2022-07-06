@@ -42,9 +42,9 @@ class ChatServiceTest {
 
     @Test
     fun testEditMessage() {
-        val mId = ChatService.createMessage(dasha, masha, "Пгастити").id
+        ChatService.createMessage(dasha, masha, "Пгастити")
+        val mId = ChatService.testGetChats()[ChatService.keyOf(dasha, masha)]!!.messages.keys.max()
         assertEquals("Простите", ChatService.editMessage(masha, dasha, mId, "Простите").text)
-        assertEquals("Простите", ChatService.testGetChats().last().messages.last().text)
     }
 
     @Test(expected = MessageNotFoundException::class)
@@ -54,10 +54,10 @@ class ChatServiceTest {
 
     @Test
     fun testDeleteMessage() {
-        val prevMessage = ChatService.testGetChats()[1].messages.last()
+        val prevMessage = ChatService.testGetChats()[ChatService.keyOf(dasha, masha)]!!.messages.keys.max()
         ChatService.createMessage(dasha, masha, "Message to delete")
-        assertEquals(0, ChatService.deleteMessage(dasha, masha, 2))
-        assertEquals(prevMessage, ChatService.testGetChats()[1].messages.last())
+        assertEquals(0, ChatService.deleteMessage(dasha, masha, prevMessage + 1))
+        assertEquals(prevMessage, ChatService.testGetChats()[ChatService.keyOf(dasha, masha)]!!.messages.keys.max())
     }
 
     @Test(expected = MessageNotFoundException::class)
@@ -83,14 +83,14 @@ class ChatServiceTest {
     @Test
     fun testGetUnreadChats() {
         assertEquals(listOf(
-            ChatService.testGetChats()[0]
+            ChatService.testGetChats()[ChatService.keyOf(sasha, dasha)]
         ), ChatService.getUnreadChats(sasha))
 
         ChatService.createMessage(masha, dasha, "Привет")
 
         assertEquals(listOf(
-            ChatService.testGetChats()[0],
-            ChatService.testGetChats()[1]
+            ChatService.testGetChats()[ChatService.keyOf(sasha, dasha)],
+            ChatService.testGetChats()[ChatService.keyOf(dasha, masha)]
         ), ChatService.getUnreadChats(dasha))
     }
 

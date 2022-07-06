@@ -2,12 +2,10 @@ import java.util.Calendar
 
 object ChatService {
 
-    private val chats = mutableListOf<Chat>()
-    private var lastChatId: Int = -1
+    private val chats = mutableMapOf<Pair<User, User>, Chat>()
 
     fun testReset() {
         chats.clear()
-        lastChatId = -1
     }
 
     fun testGetChats() = chats
@@ -15,21 +13,18 @@ object ChatService {
     fun createChat(user0: User, user1: User): Chat {
         // Создать чат (чат создаётся тогда, когда пользователю,
         // с которым до этого не было чата, отправляется первое сообщение).
-        val chat = Chat(id = ++lastChatId, ownersId = Pair(user0.id, user1.id))
-        chats.add(chat)
-        return chat
+        return Chat().let { chats[keyOf(user0, user1)] = it; it }
     }
 
     fun deleteChat(user0: User, user1: User): Int {
         // Удалить чат (целиком удаляется все переписка).
-        val chat = findChat(user0, user1)
-        chats.remove(chat)
+        chats.remove(keyOf(user0, user1), findChat(user0, user1))
         return 0
     }
 
-    private fun getChats(user: User): List<Chat> {
+    fun getChats(user: User): List<Chat> {
         // Получить все чаты пользователя
-        return chats.filter { it.ownersId.first == user.id || it.ownersId.second == user.id }
+        return chats.filter { it.key.first == user || it.key.second == user }.values.toList()
     }
 
     fun createMessage(user0: User, user1: User, text: String): Message {
@@ -39,59 +34,62 @@ object ChatService {
         } catch (e: ChatNotFoundException) {
             createChat(user0, user1)
         }
-        val message = Message(
-            chat.lastMessageId + 1,
-            chat.id,
+        return Message(
             user0.id,
             text,
             date = Calendar.getInstance().time.time
-        )
-        chat.messages.add(message)
-        chat.lastMessageId += 1
-        return message
+        ).let {
+            chat.lastMessageId = chat.lastMessageId + 1
+            chat.messages[chat.lastMessageId] = it
+            it }
     }
 
     fun editMessage(user0: User, user1: User, messageId: Int, text: String): Message {
         // Редактировать сообщение
-        val message = findChat(user0, user1).messages.firstOrNull() { it.id == messageId } ?:
-            throw MessageNotFoundException("Message ID $messageId not found")
-        message.text = text
-        message.isEdited = true
-        return message
+        return findChat(user0, user1)
+            .messages[messageId]
+            .let {  it?.text = text; it } ?:
+                throw MessageNotFoundException("Message ID $messageId not found")
     }
+
+    fun keyOf(user0: User, user1: User) = Pair(minOf(user0, user1), maxOf(user0, user1))
 
     fun deleteMessage(user0: User, user1: User, messageId: Int): Int {
         // Удалить сообщение (при удалении последнего сообщения в чате весь чат удаляется).
         // Проработать удаление чата по отдельности для каждого пользователя
-        val chat = findChat(user0, user1)
-        val message = chat.messages.firstOrNull { it.id == messageId } ?:
-            throw MessageNotFoundException("Message ID $messageId not found")
-        chat.messages.remove(message)
-        if (chat.messages.size == 0)
-            deleteChat(user0, user1)
+        chats.let {
+            if (findChat(user0, user1).messages.let { m -> m.remove(messageId) ?:
+                throw MessageNotFoundException("Message ID $messageId not found"); m }.isEmpty()) {
+                it.remove(keyOf(user0, user1))
+            }
+        }
         return 0
     }
 
     fun getUnreadChatsCount(user: User): Int {
         // Получить количество чатов, в которых есть непрочитанные сообщения
-        return getChats(user).count { chat -> chat.messages.any { it.senderId != user.id && !it.isRead } }
+        return getChats(user).count { chat -> chat.messages.values.any { it.senderId != user.id && !it.isRead } }
     }
 
     fun getUnreadChats(user: User): List<Chat> {
         // Получить чаты, в которых есть непрочитанные сообщения
-        return getChats(user).filter { chat -> chat.messages.any { it.senderId != user.id && !it.isRead } }
+        return getChats(user).filter { chat -> chat.messages.values.any { it.senderId != user.id && !it.isRead } }
     }
 
     fun getMessages(user0: User, user1: User, startMessageId: Int, messageCount: Int): List<Message> {
         // Получить список сообщений из чата (после того, как вызвана данная функция,
         // все отданные сообщения автоматически считаются прочитанными)
-        val filtered = findChat(user0, user1).messages.filter { it.id >= startMessageId }.takeLast(messageCount)
-        filtered.forEach{ if (it.senderId != user0.id) it.isRead = true }
-        return filtered
+        return findChat(user0, user1)
+            .messages
+            .filter { it.key >= startMessageId }
+            .values
+            .toList()
+            .takeLast(messageCount)
+            .let { it.forEach { m -> if (m.senderId != user0.id) m.isRead = true }; it }
     }
 
-    private fun findChat(user0: User, user1: User): Chat {
-        return getChats(user0).firstOrNull{ it.ownersId.first == user1.id || it.ownersId.second == user1.id } ?:
+    fun findChat(user0: User, user1: User): Chat {
+        return chats[keyOf(user0, user1)] ?:
             throw ChatNotFoundException("Chat for ${user0.name} & ${user1.name} not found")
     }
 }
